@@ -18,3 +18,7 @@ hs_err_pid*
 
 # Java binary files #
 /bin/
+
+# Models #
+en.bin
+pl.bin
