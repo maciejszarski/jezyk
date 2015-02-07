@@ -1,11 +1,20 @@
+import java.util.Hashtable;
+import java.util.List;
+
 public class Main {
 
 	public static void main(String[] args){
 		Algorithm algorithm = new Algorithm();
-		algorithm.readTexts();
-		algorithm.tagTexts();
-//		algorithm.alignTexts();
-//		algorithm.createDictionary();
-//		algorithm.printResults();
+		try{
+//			Hashtable<String,List<String>> texts = algorithm.readTexts();
+			algorithm.alignSentences();
+//			algorithm.formatSentences();
+	//		algorithm.alignWords();
+	//		algorithm.createDictionary();
+	//		algorithm.printResults();
+		}
+		catch(Exception e){
+			e.printStackTrace();
+		}
 	}
 }

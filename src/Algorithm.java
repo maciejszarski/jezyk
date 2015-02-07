@@ -1,7 +1,10 @@
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Scanner;
 
@@ -9,73 +12,73 @@ import org.annolab.tt4j.TokenHandler;
 import org.annolab.tt4j.TreeTaggerException;
 import org.annolab.tt4j.TreeTaggerWrapper;
 
+import net.sourceforge.align.*;
+import net.sourceforge.align.coretypes.Alignment;
+import net.sourceforge.align.ui.console.Maligna;
+import net.sourceforge.align.ui.console.command.Command;
+import net.sourceforge.align.ui.console.command.CommandFactory;
+
 public class Algorithm {
-	private final String modelPathEN = "en.bin";
-	private final String modelPathPL = "pl.bin";
-	private String taggerPath = "treetagger/";
 	private String filesPathEN = "files/en/";
 	private String filesPathPL = "files/pl/";
-	
-	private List<String[]> textsEN;
-	private List<String[]> textsPL;
-	
+		
 	public Algorithm(){
-		taggerPath = Algorithm.class.getResource(taggerPath).getPath().replaceAll("%20"," ");
 		filesPathEN = Algorithm.class.getResource(filesPathEN).getPath().replaceAll("%20"," ");
 		filesPathPL = Algorithm.class.getResource(filesPathPL).getPath().replaceAll("%20"," ");
 	}
 
-	public void readTexts(){
-		textsEN = readTexts(filesPathEN);
-		textsPL = readTexts(filesPathPL);
-	}
+//	public Hashtable<String,List<String>> readTexts(){
+//		Hashtable<String,List<String>> texts = new Hashtable<String,List<String>>();
+//		texts.put("en", readTexts(filesPathEN));
+//		texts.put("pl", readTexts(filesPathPL));
+//		return texts;
+//	}
+//	
+//	private List<String> readTexts(String filesPath){
+//		List<String> texts = new ArrayList<String>();
+//		File folder = new File(filesPath);
+//		try{
+//			for (File file : folder.listFiles()){
+//				texts.add(new Scanner(file).useDelimiter("\\Z").next());
+//			}
+//		}
+//		catch(IOException e){
+//			e.printStackTrace();
+//		}
+//		return texts;
+//	}	
 	
-	private List<String[]> readTexts(String filesPath){
-		List<String[]> texts = new ArrayList<String[]>();
-		File folder = new File(filesPath);
-		try{
-			for (File file : folder.listFiles()){
-				texts.add(segmentate(new Scanner(file).useDelimiter("\\Z").next()));
+	public void alignSentences() throws Exception{
+		File folderEN = new File(filesPathEN);
+		File folderPL = new File(filesPathPL);
+		File[] folderListEN = folderEN.listFiles();
+		File[] folderListPL = folderPL.listFiles();
+		
+		if(folderListEN.length == folderListPL.length){
+			for (File file : folderListEN){
+				alignSentences(file.getName());
 			}
 		}
-		catch(IOException e){
-			e.printStackTrace();
+		else{
+			throw new Exception();
 		}
-		return texts;
 	}
 	
-	public void tagTexts(){
-		tagTexts(textsEN, modelPathEN);
-		tagTexts(textsPL, modelPathPL);
-	}
-	
-	private String[] segmentate(String text){
-		String[] segmentatedText = text.split(" ");
-		return segmentatedText;
-	}
-	
-	private void tagTexts(List<String[]> texts, String modelPath){
+	private void alignSentences(String fileName) throws Exception{
+		String malignaPath = Algorithm.class.getResource("maligna/bin").getPath().replaceAll("%20"," ");
+		String resultsPath = Algorithm.class.getResource("maligna/results").getPath().replaceAll("%20"," ");
+		String pipe = malignaPath + "/maligna parse -c txt "+filesPathEN+"/"+fileName+" "+filesPathPL+"/"+fileName+" | " +
+						 malignaPath + "/maligna modify -c split-sentence | " +
+						 malignaPath + "/maligna modify -c trim | " +
+						 malignaPath + "/maligna align -c viterbi -a poisson -n word -s iterative-band | " + 
+						 malignaPath + "/maligna select -c one-to-one | " +
+						 malignaPath + "/maligna format -c txt "+resultsPath+"/en/"+fileName+" "+resultsPath+"/pl/"+fileName;
+		String[] command = {
+				"sh",
+				"-c",
+				pipe
+				};
 		
-		//more doc on the tagger at https://code.google.com/p/tt4j/
-		System.setProperty("treetagger.home", taggerPath);
-	    TreeTaggerWrapper<String> tt = new TreeTaggerWrapper<String>();
-	    try {
-	    	tt.setModel(modelPath);
-	    	tt.setHandler(new TokenHandler<String>() {
-		        public void token(String token, String pos, String lemma) {
-		        	System.out.println(token + "\t" + pos + "\t" + lemma);
-		        }
-		    });
-	    	for(int i=0; i<texts.size(); i++){
-	    		tt.process(Arrays.asList(texts.get(i)));
-	    	}
-	    } catch(IOException e){
-	    	e.printStackTrace();
-	    } catch(TreeTaggerException e) {
-			e.printStackTrace();
-		}
-	    finally {
-	    	tt.destroy();
-	    }
+		Runtime.getRuntime().exec(command);	
 	}
 }
