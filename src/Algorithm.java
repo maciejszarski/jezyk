@@ -50,10 +50,44 @@ public class Algorithm {
 		formattedSentencesPathPL = Algorithm.class.getResource(formattedSentencesPathPL).getPath().replaceAll("%20"," ");
 	}
 	
+	public void alignSentences() throws Exception{
+		System.out.println("Aligning sentences...");
+		File folderEN = new File(filesPathEN);
+		File folderPL = new File(filesPathPL);		
+		File[] folderListEN = folderEN.listFiles(filenameFilter);
+		File[] folderListPL = folderPL.listFiles(filenameFilter);		
+		if(folderListEN.length == folderListPL.length){
+			for (File file : folderListEN){
+				Process process = alignSentences(file.getName());
+				process.waitFor();
+			}
+		}
+		else{
+			throw new Exception();
+		}
+	}
+	
+	private Process alignSentences(String fileName) throws Exception{
+		String malignaPath = Algorithm.class.getResource("maligna/bin").getPath().replaceAll("%20"," ");
+		String pipe = malignaPath + "/maligna parse -c txt "+filesPathEN+"/"+fileName+" "+filesPathPL+"/"+fileName+" | " +
+						 malignaPath + "/maligna modify -c split-sentence | " +
+						 malignaPath + "/maligna modify -c trim | " +
+						 malignaPath + "/maligna align -c viterbi -a poisson -n word -s iterative-band | " + 
+						 malignaPath + "/maligna select -c one-to-one | " +
+						 malignaPath + "/maligna format -c txt "+unformattedSentencesPathEN+"/"+fileName+" "+unformattedSentencesPathPL+"/"+fileName;
+		String[] command = {
+				"sh",
+				"-c",
+				pipe
+				};
+		
+		return Runtime.getRuntime().exec(command);	
+	}
+	
 	public void formatSentences(){
+		System.out.println("Formatting sentences...");
 		formatSentences(unformattedSentencesPathEN,formattedSentencesPathEN);
 		formatSentences(unformattedSentencesPathPL,formattedSentencesPathPL);	
-		System.out.println("ok");
 	}
 	
 	private void formatSentences(String unformattedSentencesPath, String formattedSentencesPath){
@@ -97,38 +131,7 @@ public class Algorithm {
 		
 	}
 	
-	public void alignSentences() throws Exception{
-		File folderEN = new File(filesPathEN);
-		File folderPL = new File(filesPathPL);
-				
-		File[] folderListEN = folderEN.listFiles(filenameFilter);
-		File[] folderListPL = folderPL.listFiles(filenameFilter);
+	public void alignWords(){
 		
-		if(folderListEN.length == folderListPL.length){
-			for (File file : folderListEN){
-				Process process = alignSentences(file.getName());
-				process.waitFor();
-			}
-		}
-		else{
-			throw new Exception();
-		}
-	}
-	
-	private Process alignSentences(String fileName) throws Exception{
-		String malignaPath = Algorithm.class.getResource("maligna/bin").getPath().replaceAll("%20"," ");
-		String pipe = malignaPath + "/maligna parse -c txt "+filesPathEN+"/"+fileName+" "+filesPathPL+"/"+fileName+" | " +
-						 malignaPath + "/maligna modify -c split-sentence | " +
-						 malignaPath + "/maligna modify -c trim | " +
-						 malignaPath + "/maligna align -c viterbi -a poisson -n word -s iterative-band | " + 
-						 malignaPath + "/maligna select -c one-to-one | " +
-						 malignaPath + "/maligna format -c txt "+unformattedSentencesPathEN+"/"+fileName+" "+unformattedSentencesPathPL+"/"+fileName;
-		String[] command = {
-				"sh",
-				"-c",
-				pipe
-				};
-		
-		return Runtime.getRuntime().exec(command);	
 	}
 }

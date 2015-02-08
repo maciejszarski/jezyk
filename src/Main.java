@@ -8,7 +8,7 @@ public class Main {
 		try{
 			algorithm.alignSentences();
 			algorithm.formatSentences();
-	//		algorithm.alignWords();
+			algorithm.alignWords();
 	//		algorithm.createDictionary();
 	//		algorithm.printResults();
 		}
