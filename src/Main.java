@@ -11,6 +11,7 @@ public class Main {
 			algorithm.alignWords();
 	//		algorithm.createDictionary();
 	//		algorithm.printResults();
+			System.out.println("Done.");
 		}
 		catch(Exception e){
 			e.printStackTrace();

@@ -107,7 +107,6 @@ public class Algorithm {
 			    BufferedWriter output = new BufferedWriter(new FileWriter(formattedSentencesPath+"/"+file.getName())); output.close(); //clear file
 				output = new BufferedWriter(new FileWriter(formattedSentencesPath+"/"+file.getName(), true));
 				for(int i=0; i<sentences.size(); i++){
-					System.out.println(i+ " " + formattedSentencesPath+"/"+file.getName()+" "+sentences.get(i));
 					output.append("<s snum="+formatIndex(i+1)+"> " + sentences.get(i) + " </s>");
 					output.newLine();
 				}
