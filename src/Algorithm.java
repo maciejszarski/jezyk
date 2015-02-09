@@ -1,40 +1,17 @@
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
+import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.io.Writer;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Scanner;
-
-import org.annolab.tt4j.TokenHandler;
-import org.annolab.tt4j.TreeTaggerException;
-import org.annolab.tt4j.TreeTaggerWrapper;
-
-import net.sourceforge.align.*;
-import net.sourceforge.align.coretypes.Alignment;
-import net.sourceforge.align.ui.console.Maligna;
-import net.sourceforge.align.ui.console.command.Command;
-import net.sourceforge.align.ui.console.command.CommandFactory;
 
 public class Algorithm {
 	private final String[] ignoreFiles = new String[]{".DS_Store"};
 	private String filesPathEN = "files/en";
 	private String filesPathPL = "files/pl";
-	private String unformattedSentencesPathEN = "sentences/unformatted/en";
-	private String unformattedSentencesPathPL = "sentences/unformatted/pl";
-	private String formattedSentencesPathEN = "sentences/formatted/en";
-	private String formattedSentencesPathPL = "sentences/formatted/pl";
+	private String sentencesPath = "sentences";
+	private String berkeleyAlignerPath = "berkeleyaligner";
+	private String alignedPath = "aligned";
 	private FilenameFilter filenameFilter = new FilenameFilter() {
 	    public boolean accept(File folder, String name) {
 	        return !Arrays.asList(ignoreFiles).contains(name);
@@ -44,10 +21,9 @@ public class Algorithm {
 	public Algorithm(){
 		filesPathEN = Algorithm.class.getResource(filesPathEN).getPath().replaceAll("%20"," ");
 		filesPathPL = Algorithm.class.getResource(filesPathPL).getPath().replaceAll("%20"," ");
-		unformattedSentencesPathEN = Algorithm.class.getResource(unformattedSentencesPathEN).getPath().replaceAll("%20"," ");
-		unformattedSentencesPathPL = Algorithm.class.getResource(unformattedSentencesPathPL).getPath().replaceAll("%20"," ");
-		formattedSentencesPathEN = Algorithm.class.getResource(formattedSentencesPathEN).getPath().replaceAll("%20"," ");
-		formattedSentencesPathPL = Algorithm.class.getResource(formattedSentencesPathPL).getPath().replaceAll("%20"," ");
+		sentencesPath = Algorithm.class.getResource(sentencesPath).getPath().replaceAll("%20"," ");
+		berkeleyAlignerPath = Algorithm.class.getResource(berkeleyAlignerPath).getPath().replaceAll("%20"," ");
+		alignedPath = Algorithm.class.getResource(alignedPath).getPath().replaceAll("%20"," ");
 	}
 	
 	public void alignSentences() throws Exception{
@@ -74,48 +50,10 @@ public class Algorithm {
 						 malignaPath + "/maligna modify -c trim | " +
 						 malignaPath + "/maligna align -c viterbi -a poisson -n word -s iterative-band | " + 
 						 malignaPath + "/maligna select -c one-to-one | " +
-						 malignaPath + "/maligna format -c txt "+unformattedSentencesPathEN+"/"+fileName+" "+unformattedSentencesPathPL+"/"+fileName;
-		String[] command = {
-				"sh",
-				"-c",
-				pipe
-				};
+						 malignaPath + "/maligna format -c txt "+sentencesPath+"/"+fileName+".en "+sentencesPath+"/"+fileName+".pl";
+		String[] command = {"sh", "-c", pipe};
 		
 		return Runtime.getRuntime().exec(command);	
-	}
-	
-	public void formatSentences(){
-		System.out.println("Formatting sentences...");
-		formatSentences(unformattedSentencesPathEN,formattedSentencesPathEN);
-		formatSentences(unformattedSentencesPathPL,formattedSentencesPathPL);	
-	}
-	
-	private void formatSentences(String unformattedSentencesPath, String formattedSentencesPath){
-		try{
-			File folder = new File(unformattedSentencesPath);
-			for (File file : folder.listFiles(filenameFilter)){
-				List<String> sentences = new ArrayList<String>();
-				FileInputStream in = new FileInputStream(unformattedSentencesPath+"/"+file.getName());			    
-				BufferedReader br = new BufferedReader(new InputStreamReader(in));
-				
-			    String line;
-			    while ((line = br.readLine()) != null) {
-			    	sentences.add(line);			    	
-			    }
-			    br.close();
-			    
-			    BufferedWriter output = new BufferedWriter(new FileWriter(formattedSentencesPath+"/"+file.getName())); output.close(); //clear file
-				output = new BufferedWriter(new FileWriter(formattedSentencesPath+"/"+file.getName(), true));
-				for(int i=0; i<sentences.size(); i++){
-					output.append("<s snum="+formatIndex(i+1)+"> " + sentences.get(i) + " </s>");
-					output.newLine();
-				}
-				output.close();
-			}
-		}
-		catch(IOException e){
-			e.printStackTrace();
-		}
 	}
 	
 	private String formatIndex(int index){
@@ -130,7 +68,52 @@ public class Algorithm {
 		
 	}
 	
+	public void generateConfigFile(){
+		try {
+			System.out.println("Generating config file..."+alignedPath);
+			String[] config = new String[]{
+					"forwardModels	MODEL1 HMM",
+					"reverseModels	MODEL1 HMM",
+					"mode	JOINT JOINT",
+					"iters	2 2",
+					"execDir	"+alignedPath,
+					"create",
+					"saveParams	true",
+					"numThreads	1",
+					"msPerLine	10000",
+					"alignTraining",
+					"foreignSuffix	pl",
+					"englishSuffix	en",
+					"lowercase",
+					"trainSources	"+sentencesPath,
+					"sentences	MAX",
+					"testSources	"+sentencesPath,
+					"maxTestSentences	MAX",
+					"offsetTestSentences	0",
+					"competitiveThresholding	true",
+					"overwriteExecDir	true"
+			};
+			PrintWriter out = new PrintWriter(berkeleyAlignerPath+"/en-pl.conf");
+			for(int i=0; i<config.length; i++){
+				out.println(config[i]);
+			}
+			out.close();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
+	}
+	
 	public void alignWords(){
-		
+		System.out.println("Aligning words...");
+		try {
+			String cmd = "java -server -mx1000m -jar "+berkeleyAlignerPath+"/berkeleyaligner.jar ++"+berkeleyAlignerPath+"/en-pl.conf";
+			String[] command = {"sh", "-c", cmd};
+			Process process = Runtime.getRuntime().exec(command);
+			process.waitFor();
+		} catch (IOException e) {
+			e.printStackTrace();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}	
 	}
 }

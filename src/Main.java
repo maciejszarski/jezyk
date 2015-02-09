@@ -7,7 +7,7 @@ public class Main {
 		Algorithm algorithm = new Algorithm();
 		try{
 			algorithm.alignSentences();
-			algorithm.formatSentences();
+			algorithm.generateConfigFile();
 			algorithm.alignWords();
 	//		algorithm.createDictionary();
 	//		algorithm.printResults();
