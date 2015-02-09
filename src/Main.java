@@ -9,8 +9,9 @@ public class Main {
 			algorithm.alignSentences();
 			algorithm.generateConfigFile();
 			algorithm.alignWords();
-	//		algorithm.createDictionary();
-	//		algorithm.printResults();
+			Hashtable<String,Hashtable<String,Integer>> translations = algorithm.getTranslations();
+			Hashtable<String,String> dictionary = algorithm.createDictionary(translations);
+			algorithm.printDictionary(dictionary);
 			System.out.println("Done.");
 		}
 		catch(Exception e){
