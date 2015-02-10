@@ -1,10 +1,13 @@
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -136,11 +139,13 @@ public class Algorithm {
 		List<String[]> result = new ArrayList<String[]>();
 		try {
 			File file = new File(alignedPath+"/"+alignedFilePath);
-			BufferedReader br = new BufferedReader(new FileReader(file));
+			Reader reader = new InputStreamReader(new FileInputStream(file), "UTF-8");
+			BufferedReader br = new BufferedReader(reader);
 			String line;
 			List<String> words = new ArrayList<String>();
 			List<Integer> lengths = new ArrayList<Integer>();
 			while ((line = br.readLine()) != null) {
+				System.out.println(line);
 				String[] splitted = line.split("[., :;!?]+");
 				words.addAll(Arrays.asList(splitted));
 				lengths.add(splitted.length);
@@ -166,7 +171,8 @@ public class Algorithm {
 		Hashtable<String,Hashtable<String,Integer>> translations = new Hashtable<String,Hashtable<String,Integer>>();
 		try {
 			File alignFile = new File(alignedPath+"/training.align");
-			BufferedReader alignBR = new BufferedReader(new FileReader(alignFile));
+			Reader alignReader = new InputStreamReader(new FileInputStream(alignFile), "UTF-8");
+			BufferedReader alignBR = new BufferedReader(alignReader);
 			String alignLine;
 			int i = 0;
 			while ((alignLine = alignBR.readLine()) != null) {
@@ -252,5 +258,24 @@ public class Algorithm {
 	    long timeEnd = Calendar.getInstance().getTimeInMillis();
 		System.out.println("Total time: "+(timeEnd-timeStart));
 	    return lemmas;
+	}
+	
+	public void readFile(){
+		try {
+			File file = new File(filesPathPL+"/treaty_of_lisbon2");
+			Reader reader = new InputStreamReader(new FileInputStream(file), "UTF-8");
+			BufferedReader br = new BufferedReader(reader);
+			String line;
+			while ((line = br.readLine()) != null) {
+				System.out.println(line);
+			}
+			br.close();
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }

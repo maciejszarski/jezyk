@@ -10,15 +10,16 @@ public class Main {
 	public static void main(String[] args){
 		Algorithm algorithm = new Algorithm();
 		try{
-//			algorithm.alignSentences();
-//			algorithm.generateConfigFile();
-//			algorithm.alignWords();
+			algorithm.alignSentences();
+			algorithm.generateConfigFile();
+			algorithm.alignWords();
 			List<String[]> lemmatsEN = algorithm.generateLemmats(alignedFileEN,modelPathEN);
 			List<String[]> lemmatsPL = algorithm.generateLemmats(alignedFilePL,modelPathPL);
 			Hashtable<String,Hashtable<String,Integer>> translations = algorithm.getTranslations(lemmatsEN,lemmatsPL);
 			Hashtable<String,String> dictionary = algorithm.createDictionary(translations);
 			algorithm.printDictionary(dictionary);
 			System.out.println("Done.");
+//			algorithm.readFile();
 		}
 		catch(Exception e){
 			e.printStackTrace();
