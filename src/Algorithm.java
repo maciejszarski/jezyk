@@ -7,10 +7,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.Reader;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Hashtable;
 import java.util.List;
 
@@ -145,7 +143,6 @@ public class Algorithm {
 			List<String> words = new ArrayList<String>();
 			List<Integer> lengths = new ArrayList<Integer>();
 			while ((line = br.readLine()) != null) {
-				System.out.println(line);
 				String[] splitted = line.split("[., :;!?]+");
 				words.addAll(Arrays.asList(splitted));
 				lengths.add(splitted.length);
@@ -166,7 +163,7 @@ public class Algorithm {
 		return result;
 	}
 	
-	public Hashtable<String,Hashtable<String,Integer>> getTranslations(List<String[]> lemmatsEN, List<String[]> lemmatsPL){
+	public Hashtable<String,Hashtable<String,Integer>> getTranslations(List<String[]> lemmats1, List<String[]> lemmats2, boolean reverse){
 		System.out.println("Preparing translations from aligned files...");
 		Hashtable<String,Hashtable<String,Integer>> translations = new Hashtable<String,Hashtable<String,Integer>>();
 		try {
@@ -177,23 +174,30 @@ public class Algorithm {
 			int i = 0;
 			while ((alignLine = alignBR.readLine()) != null) {
 			   String[] aligns = alignLine.split(" ");
-			   String[] enWords = lemmatsEN.get(i);
-			   String[] plWords = lemmatsPL.get(i);
+			   String[] words1 = lemmats1.get(i);
+			   String[] words2 = lemmats2.get(i);
 			   for(int j=0; j<aligns.length; j++){
 				   String[] pair = aligns[j].split("-");
-				   String plWord = plWords[Integer.parseInt(pair[0])];
-				   String enWord = enWords[Integer.parseInt(pair[1])];
-				   if(translations.containsKey(enWord)){
+				   String word1, word2;
+				   if(reverse){
+					   word2 = words2[Integer.parseInt(pair[1])];
+					   word1 = words1[Integer.parseInt(pair[0])];
+				   }
+				   else{
+					   word2 = words2[Integer.parseInt(pair[0])];
+					   word1 = words1[Integer.parseInt(pair[1])];
+				   }
+				   if(translations.containsKey(word1)){
 					   int value = 0;
-					   if(translations.get(enWord).containsKey(plWord)){
-						   value = translations.get(enWord).get(plWord) + 1;
+					   if(translations.get(word1).containsKey(word2)){
+						   value = translations.get(word1).get(word2) + 1;
 					   }
-					   translations.get(enWord).put(plWord, value);
+					   translations.get(word1).put(word2, value);
 				   }
 				   else{
 					   Hashtable<String,Integer> translation = new Hashtable<String,Integer>();
-					   translation.put(plWord, 1);
-					   translations.put(enWord, translation);
+					   translation.put(word2, 1);
+					   translations.put(word1, translation);
 				   }
 			   }
 			   i++;
@@ -231,7 +235,6 @@ public class Algorithm {
 	}
 	
 	public String[] lemmatize(List<String> words, String modelPath){
-		long timeStart = Calendar.getInstance().getTimeInMillis();
 		//more doc on the tagger at https://code.google.com/p/tt4j/
 		lemmas = new String[words.size()];
 		lemmasIndex = 0;
@@ -241,7 +244,6 @@ public class Algorithm {
 	    	tt.setModel(modelPath);
 	    	tt.setHandler(new TokenHandler<String>() {
 		        public void token(String token, String pos, String lemma) {
-		        	System.out.println(token + "\t" + pos + "\t" + lemma);
 		        	lemmas[lemmasIndex] = lemma;
 		        	lemmasIndex++;
 		        }
@@ -255,27 +257,22 @@ public class Algorithm {
 	    finally {
 	    	tt.destroy();
 	    }
-	    long timeEnd = Calendar.getInstance().getTimeInMillis();
-		System.out.println("Total time: "+(timeEnd-timeStart));
 	    return lemmas;
 	}
 	
-	public void readFile(){
-		try {
-			File file = new File(filesPathPL+"/treaty_of_lisbon2");
-			Reader reader = new InputStreamReader(new FileInputStream(file), "UTF-8");
-			BufferedReader br = new BufferedReader(reader);
-			String line;
-			while ((line = br.readLine()) != null) {
-				System.out.println(line);
+	public Hashtable<String,String> filterDictionary(Hashtable<String,String> dictionary, Hashtable<String,String> reverseDictionary){
+		System.out.println("Removing incorrect translations from dictionary...");
+		Hashtable<String,String> dictionaryCopy = new Hashtable<String,String>(dictionary);
+		int n1 = dictionary.size();
+		for (String wordEN : dictionaryCopy.keySet()) {
+			String wordPL = dictionaryCopy.get(wordEN);
+			if(wordEN != reverseDictionary.get(wordPL)){
+				dictionary.remove(wordEN);
 			}
-			br.close();
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
 		}
+		int n2 = dictionary.size();
+		System.out.println("Removed "+(n1-n2)+" words, left "+n2+" words.");
+		return dictionary;
 	}
+	
 }
